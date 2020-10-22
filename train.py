@@ -65,7 +65,6 @@ print("Real Train set : ", len(test_set))
 # Get a flattened list of all labels
 train_label = [i.split(',') for i in train_label]
 train_label_sub = [item for sublist in train_label for item in sublist]
-# print(train_label)
 
 # count the number of occurences for each label
 counts = dict((x, train_label_sub.count(x)) for x in set(train_label_sub))
@@ -108,8 +107,15 @@ def morgan_fp(smiles):
     npfp = np.array(list(fp.ToBitString())).astype('int8')
     return npfp
 
+def maccs_fp(smiles):
+    mol = Chem.MolFromSmiles(smiles)
+    fp = MACCSkeys.GenMACCSKeys(mol)
+    npfp = np.array(list(fp.ToBitString())).astype('int8')
+    return npfp
+
 
 train_set_enc = np.array([morgan_fp(i) for i in train_set])
+test_set_enc = np.array([morgan_fp(i) for i in test_set])
 
 ###############
 
@@ -178,6 +184,7 @@ model.compile(optimizer=opt_adam,
               loss=LOSS,
               metrics=METRICS,
               )
+print(model.summary())
 
 checkpointer = ModelCheckpoint(filepath=NAME_CHECKPOINT,
                                monitor='val_acc',
@@ -215,7 +222,7 @@ plt.title('model loss')
 plt.ylabel('loss')
 plt.xlabel('epoch')
 plt.legend(['train', 'test'], loc='upper left')
-plt.show() # show two plots
+plt.show()  # show two plots
 
 ####################
 # Evaluate accuracy
@@ -228,3 +235,23 @@ plt.show() # show two plots
 ##########
 # Predict
 ##########
+
+preds = model.predict(test_set_enc)
+
+# Choose the top 15 predictions for each sample and group by 3
+
+ind2word = {i: x for i, x in enumerate(vocab)}
+
+preds_clean = []
+for i in range(preds.shape[0]):
+    labels = [ind2word[i] for i in list(preds[i, :].argsort()[-15:][::-1])]
+
+    labels_seq = []
+    for i in range(0, 15, 3):
+        labels_seq.append(",".join(labels[i:(i+3)]))
+
+    preds_clean.append(";".join(labels_seq))
+
+pprint(preds_clean)
+
+# DataStructs.TanimotoSimilarity
