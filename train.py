@@ -16,10 +16,10 @@ from sklearn.model_selection import cross_validate, train_test_split
 # TensorFlow and Keras for deep learning
 import tensorflow as tf
 from keras.models import Sequential
-from keras.layers import Dense, Dropout, Activation
+from keras.layers import Dense, Dropout, Activation, LeakyReLU
 from keras.callbacks import ReduceLROnPlateau
 # from keras.regularizers import WeightRegularizer
-from keras.optimizers import SGD
+from keras.optimizers import Adam, SGD
 
 
 ###############
@@ -34,7 +34,8 @@ sample_sub = pd.read_csv("data/sample_submission.csv")
 # Split dataset
 ###############
 
-train_set, train_label = list(whole_train_set['SMILES']), list(whole_train_set['SENTENCE'])
+train_set, train_label = list(whole_train_set['SMILES']), list(
+    whole_train_set['SENTENCE'])
 
 train_set, valid_set, train_label, valid_label = train_test_split(
     train_set, train_label, test_size=0.2, random_state=42)
@@ -97,11 +98,13 @@ def smiles_decoder(X):
 # Encoder Label
 ################
 
+
 def onehot_sentence(sentence):
     l = np.zeros(len(vocab))
     for label in sentence:
         l[vocab.index(label)] = 1
     return l
+
 
 # trainint set
 train_label_enc = np.zeros((len(train_label), len(vocab)), dtype=np.float32)
@@ -136,26 +139,31 @@ print(valid_label_enc.shape)
 
 model = tf.keras.Sequential([
     tf.keras.layers.Flatten(input_shape=(240, 55)),
-    tf.keras.layers.Dense(256, activation='relu'),
-    tf.keras.layers.Dense(512, activation='relu'),
-    tf.keras.layers.Dense(256, activation='relu'),
-    tf.keras.layers.Dense(109)
+    tf.keras.layers.Dense(256, activation=LeakyReLU(alpha=0.1)),
+    tf.keras.layers.Dense(512, activation=LeakyReLU(alpha=0.1)),
+    tf.keras.layers.Dense(256, activation=LeakyReLU(alpha=0.1)),
+    # tf.keras.layers.Dense(109, activation='sigmoid')
+    tf.keras.layers.Dense(109, activation='sigmoid')
 ])
 
-model.compile(optimizer='adam',
+opt_adam = Adam(lr=0.001, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
+
+model.compile(optimizer=opt_adam,
               loss="binary_crossentropy",
               metrics=['accuracy'])
 
 print(len(train_set_enc))
 print(len(train_label_enc))
 print(train_label_enc)
-model.fit(train_set_enc, train_label_enc, epochs=200)
+model.fit(train_set_enc, train_label_enc, batch_size=100,
+          epochs=400, use_multiprocessing=True)
 
 ####################
 # Evaluate accuracy
 ####################
 
-test_loss, test_acc = model.evaluate(valid_set_enc,  valid_label_enc, verbose=1)
+test_loss, test_acc = model.evaluate(
+    valid_set_enc,  valid_label_enc, verbose=1)
 
 print('\nTest accuracy:', test_acc)
 
