@@ -19,11 +19,13 @@ from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.model_selection import cross_validate, train_test_split
 # TensorFlow and Keras for deep learning
 import tensorflow as tf
+import tensorflow_addons as tfa
 from keras.models import Sequential
 from keras.layers import Dense, Dropout, Activation, LeakyReLU
-from keras.callbacks import ModelCheckpoint
+from keras.callbacks import ModelCheckpoint, ReduceLROnPlateau
 # from keras.regularizers import WeightRegularizer
 from keras.optimizers import Adam, SGD
+from keras.regularizers import l1, l2, l1_l2
 
 # Plot
 from matplotlib import pyplot as plt
@@ -37,16 +39,39 @@ vocab = open("data/vocabulary.txt", 'r').read().split("\n")
 sample_sub = pd.read_csv("data/sample_submission.csv")
 
 
-###########
-# Parameter
-###########
+#################
+# Hyper parameter
+#################
 
 N_EPOCHS = 200
 BATCH_SIZE = 100
 VALID_SPLIT = 0.2
+DROPOUT = 0.2
+KERNEL_REG = l1_l2(l1=1e-5, l2=1e-4)
+BIAS_REG = l2(1e-4)
+ACTI_REG = l2(1e-5)
+# OPTIMIZR = opt_sgd = SGD(lr=0.005, decay=1e-6, momentum=0.9, nesterov=True)
+OPTIMIZER = opt_adam = Adam(lr=0.001, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
+
+# tf.config.run_functions_eagerly(True)
+def my_hamming(y_true, y_pred):
+    return tfa.metrics.hamming.hamming_loss_fn(y_true=y_true, y_pred=y_pred, mode="multiclass", threshold=0.8)
+# LOSS = my_hamming
+
+def my_npair(y_true, y_pred):
+    return tfa.losses.npairs_multilabel_loss(y_true=y_true, y_pred=y_pred)
+
 LOSS = "binary_crossentropy"
+# LOSS = tf.nn.sigmoid_cross_entropy_with_logits
+# METRICS = ['accuracy']
 METRICS = ['accuracy']
 NAME_CHECKPOINT = 'model_checkpoint.hdf5'
+
+# plot
+HIST_ACC = 'accuracy'
+HIST_VAL_ACC = 'val_accuracy'
+HIST_LOSS = 'loss'
+HIST_VAL_LOSS = 'val_loss'
 
 ###############
 # Split dataset
@@ -168,24 +193,50 @@ model = tf.keras.Sequential([
     # tf.keras.layers.Flatten(input_shape=(240, 55)),
     tf.keras.layers.Flatten(input_shape=(8192,)),
     # tf.keras.layers.Dropout(0.2, input_shape=(8192,)),
-    tf.keras.layers.Dense(128, activation=LeakyReLU(alpha=0.1)),
+    tf.keras.layers.Dense(
+        256, 
+        activation=LeakyReLU(alpha=0.1), 
+        kernel_regularizer=KERNEL_REG, 
+        bias_regularizer=BIAS_REG, 
+        activity_regularizer=ACTI_REG
+        ),
+    tf.keras.layers.Dropout(DROPOUT),
+    # tf.keras.layers.BatchNormalization(),
+    #---
+    tf.keras.layers.Dense(
+        256, 
+        activation=LeakyReLU(alpha=0.1), 
+        kernel_regularizer=KERNEL_REG, 
+        bias_regularizer=BIAS_REG, 
+        activity_regularizer=ACTI_REG
+        ),
     tf.keras.layers.Dropout(0.2),
-    tf.keras.layers.Dense(256, activation=LeakyReLU(alpha=0.1)),
-    tf.keras.layers.Dropout(0.2),
-    tf.keras.layers.Dense(128, activation=LeakyReLU(alpha=0.1)),
-    tf.keras.layers.Dense(109, activation='sigmoid')
-    # tf.keras.layers.Dense(109, activation='tanh')
+    # tf.keras.layers.BatchNormalization(),
+    #---
+    tf.keras.layers.Dense(
+        256, 
+        activation=LeakyReLU(alpha=0.1), 
+        kernel_regularizer=KERNEL_REG, 
+        bias_regularizer=BIAS_REG, 
+        activity_regularizer=ACTI_REG
+        ),
+    # tf.keras.layers.Dropout(0.2),
+    # tf.keras.layers.BatchNormalization(),
+    # --- Output layer
+    tf.keras.layers.Dense(109, activation='sigmoid'),
+    # tf.keras.layers.Dense(109, activation='softmax')
+    # tf.keras.layers.BatchNormalization()
 ])
 
-opt_sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
-opt_adam = Adam(lr=0.001, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
-
-model.compile(optimizer=opt_adam,
+model.compile(optimizer=OPTIMIZER,
               loss=LOSS,
               metrics=METRICS,
               )
+
 print(model.summary())
 
+# Callback
+reduce_lr = ReduceLROnPlateau(monitor='loss', factor=0.5,patience=50, min_lr=0.00001, verbose=1)
 checkpointer = ModelCheckpoint(filepath=NAME_CHECKPOINT,
                                monitor='val_acc',
                                mode=max,
@@ -204,11 +255,17 @@ history = model.fit(
 )
 
 # list all data in history
-pprint(history.history.keys())
+# pprint(history.history.keys())
+
+print("")
+print(f"Max accuracy     : {np.max(history.history[HIST_ACC])}")
+print(f"Max val accuracy : {np.max(history.history[HIST_VAL_ACC])}")
+print(f"Min loss         : {np.min(history.history[HIST_LOSS])}")
+print(f"Min val loss     : {np.min(history.history[HIST_VAL_LOSS])}")
 
 # summarize history for accuracy
-plt.plot(history.history['accuracy'])
-plt.plot(history.history['val_accuracy'])
+plt.plot(history.history[HIST_ACC])
+plt.plot(history.history[HIST_VAL_ACC])
 plt.title('model accuracy')
 plt.ylabel('accuracy')
 plt.xlabel('epoch')
@@ -216,8 +273,8 @@ plt.legend(['train', 'test'], loc='upper left')
 plt.show()
 
 # summarize history for loss
-plt.plot(history.history['loss'])
-plt.plot(history.history['val_loss'])
+plt.plot(history.history[HIST_LOSS])
+plt.plot(history.history[HIST_VAL_LOSS])
 plt.title('model loss')
 plt.ylabel('loss')
 plt.xlabel('epoch')
@@ -236,22 +293,31 @@ plt.show()  # show two plots
 # Predict
 ##########
 
-preds = model.predict(test_set_enc)
+pred = model.predict(test_set_enc)
 
 # Choose the top 15 predictions for each sample and group by 3
 
 ind2word = {i: x for i, x in enumerate(vocab)}
 
-preds_clean = []
-for i in range(preds.shape[0]):
-    labels = [ind2word[i] for i in list(preds[i, :].argsort()[-15:][::-1])]
+pred_clean = []
+for i in range(pred.shape[0]):
+    labels = [ind2word[i] for i in list(pred[i, :].argsort()[-15:][::-1])]
+    pred_clean.append(labels)
 
-    labels_seq = []
-    for i in range(0, 15, 3):
-        labels_seq.append(",".join(labels[i:(i+3)]))
+    # labels_seq = []
+    # for i in range(0, 15, 3):
+    #     labels_seq.append(",".join(labels[i:(i+3)]))
 
-    preds_clean.append(";".join(labels_seq))
+    # preds_clean.append(";".join(labels_seq))
 
-pprint(preds_clean)
+
+# pprint(preds_clean)
+
+pred_label = {
+    'SMILES': test_set,
+    'PREDICTIONS': pred_clean
+}
+df = pd.DataFrame(pred_label)
+pprint(df)
 
 # DataStructs.TanimotoSimilarity
