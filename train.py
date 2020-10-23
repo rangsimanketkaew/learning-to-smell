@@ -38,6 +38,8 @@ test_set = pd.read_csv("data/test.csv")
 vocab = open("data/vocabulary.txt", 'r').read().split("\n")
 sample_sub = pd.read_csv("data/sample_submission.csv")
 
+# submission file name
+submission_file_path = "submission.csv"
 
 #################
 # Hyper parameter
@@ -299,25 +301,30 @@ pred = model.predict(test_set_enc)
 
 ind2word = {i: x for i, x in enumerate(vocab)}
 
-pred_clean = []
+pred_for_sub = []
 for i in range(pred.shape[0]):
     labels = [ind2word[i] for i in list(pred[i, :].argsort()[-15:][::-1])]
-    pred_clean.append(labels)
 
-    # labels_seq = []
-    # for i in range(0, 15, 3):
-    #     labels_seq.append(",".join(labels[i:(i+3)]))
+    labels_seq = []
+    for i in range(0, 15, 3):
+        labels_seq.append(",".join(labels[i:(i+3)]))
 
-    # preds_clean.append(";".join(labels_seq))
+    pred_for_sub.append(";".join(labels_seq))
 
 
 # pprint(preds_clean)
 
 pred_label = {
     'SMILES': test_set,
-    'PREDICTIONS': pred_clean
+    'PREDICTIONS': pred_for_sub
 }
 df = pd.DataFrame(pred_label)
-pprint(df)
+# pprint(df)
+
+print("Writing Sample Submission to : ", submission_file_path)
+df.to_csv(
+    submission_file_path,
+    index=False
+)
 
 # DataStructs.TanimotoSimilarity
