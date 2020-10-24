@@ -19,13 +19,15 @@ NumAliphaticCarbocycles = rdMolDescriptors.CalcNumAliphaticCarbocycles(mol)
 NumAromaticRings = rdMolDescriptors.CalcNumAromaticRings(mol)
 NumAromaticHeterocycles = rdMolDescriptors.CalcNumAromaticHeterocycles(mol)
 NumSaturatedRings = rdMolDescriptors.CalcNumSaturatedRings(mol)
-SASA = rdkit.Chem.rdFreeSASA.CalcSASA(mol)
+
 print(MolWeight)
+print(NumHAcceptors)
+print(NumHDonors)
 print(NumRotatableBonds)
 print(NumAliphaticCarbocycles)
 print(NumAromaticRings)
 print(NumAromaticHeterocycles)
-print(SASA)
+print(NumSaturatedRings)
 
 
 def create_adjacency(mol):
