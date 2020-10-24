@@ -42,8 +42,8 @@ BIAS_REG = l2(1e-4)
 ACTI_REG = l2(1e-5)
 VALID_SPLIT = 0.2
 
-# OPTIMIZER = opt_sgd = SGD(lr=0.005, decay=1e-6, momentum=0.9, nesterov=True)
-OPTIMIZER = opt_adam = Adam(lr=0.001, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
+# OPTIMIZER = SGD(lr=0.005, decay=1e-6, momentum=0.9, nesterov=True)
+OPTIMIZER = Adam(lr=0.001, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
 
 # tf.config.run_functions_eagerly(True)
 def my_hamming(y_true, y_pred):
@@ -58,6 +58,7 @@ LOSS = "binary_crossentropy"
 
 METRICS = ['accuracy']
 NAME_CHECKPOINT = 'model_checkpoint.hdf5'
+SAVE_SUBMISSION = False
 
 ##########
 # Callback
@@ -87,8 +88,8 @@ earlystop = EarlyStopping(
 
 cb = [
     checkpointer, 
-    reduce_lr, 
-    earlystop
+    # reduce_lr, 
+    # earlystop
     ]
 
 ######
@@ -233,14 +234,14 @@ model = Sequential([
     Flatten(input_shape=(8192,)),
     # Dropout(0.2, input_shape=(8192,)),
     Dense(128, activation=ACT_HIDDEN, kernel_regularizer=KERNEL_REG, bias_regularizer=BIAS_REG, activity_regularizer=ACTI_REG),
-    BatchNormalization(),
     Dropout(DROPOUT),
-    Dense(128, activation=ACT_HIDDEN, kernel_regularizer=KERNEL_REG, bias_regularizer=BIAS_REG, activity_regularizer=ACTI_REG),
     BatchNormalization(),
+    Dense(128, activation=ACT_HIDDEN, kernel_regularizer=KERNEL_REG, bias_regularizer=BIAS_REG, activity_regularizer=ACTI_REG),
     Dropout(DROPOUT/2),
-    Dense(128, activation=ACT_HIDDEN, kernel_regularizer=KERNEL_REG, bias_regularizer=BIAS_REG, activity_regularizer=ACTI_REG),
     BatchNormalization(),
+    Dense(128, activation=ACT_HIDDEN, kernel_regularizer=KERNEL_REG, bias_regularizer=BIAS_REG, activity_regularizer=ACTI_REG),
     Dropout(DROPOUT/4),
+    BatchNormalization(),
     Dense(109, activation=ACT_OUTPUT),
 ])
 
@@ -267,10 +268,13 @@ print(model.summary())
 # list all data in history
 # pprint(history.history.keys())
 print("")
-print(f"Accuracy     : {history.history[HIST_ACC][-1]}")
-print(f"Val accuracy : {history.history[HIST_VAL_ACC][-1]}")
-print(f"Min loss     : {np.min(history.history[HIST_LOSS])}")
-print(f"Min val loss : {np.min(history.history[HIST_VAL_LOSS])}")
+print(f"Last Accuracy     : {history.history[HIST_ACC][-1]}")
+print(f"Max  Accuracy     : {np.max(history.history[HIST_ACC])}")
+print(f"Last Val accuracy : {history.history[HIST_VAL_ACC][-1]}")
+print(f"Max  Val accuracy : {np.max(history.history[HIST_VAL_ACC])}")
+print("-----------")
+print(f"Min loss         : {np.min(history.history[HIST_LOSS])}")
+print(f"Min val loss     : {np.min(history.history[HIST_VAL_LOSS])}")
 
 # summarize history for accuracy
 plt.figure(1)
@@ -329,10 +333,11 @@ pred_label = {
 df = pd.DataFrame(pred_label)
 # pprint(df)
 
-print("Writing Sample Submission to : ", submission_file_path)
-df.to_csv(
-    submission_file_path,
-    index=False
-)
+if SAVE_SUBMISSION:
+    print("Writing Submission (csv) to : ", submission_file_path)
+    df.to_csv(
+        submission_file_path,
+        index=False
+    )
 
 # DataStructs.TanimotoSimilarity
