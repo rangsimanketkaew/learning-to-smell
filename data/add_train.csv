@@ -1,0 +1,5 @@
+SMILES,SENTENCE
+CCCCC\C(=C\c1ccccc1)C(OC\C=C(/C)CCC=C(C)C)OC\C=C(/C)CCC=C(C)C,"jamin"
+CCCCC\C(=C\c1ccccc1)C(OCC)OCC,"ethereal,jasmin,aldehydic,fruity"
+Oc1cc(O)c2CC(OC(=O)c3cc(O)c(O)c(O)c3)C(Oc2c1)c4cc(O)c(O)c(O)c4,"green,herbal,powdery,grass"
+O=C(Cc1ccccc1)OCC2CCCO2,"cacao,floral,honey"
