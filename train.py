@@ -52,7 +52,7 @@ DROPOUT = 0.2
 KERNEL_REG = l1_l2(l1=1e-5, l2=1e-4)
 BIAS_REG = l2(1e-4)
 ACTI_REG = l2(1e-5)
-# OPTIMIZR = opt_sgd = SGD(lr=0.005, decay=1e-6, momentum=0.9, nesterov=True)
+# OPTIMIZER = opt_sgd = SGD(lr=0.005, decay=1e-6, momentum=0.9, nesterov=True)
 OPTIMIZER = opt_adam = Adam(lr=0.001, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
 
 # tf.config.run_functions_eagerly(True)
@@ -65,7 +65,7 @@ def my_npair(y_true, y_pred):
 
 LOSS = "binary_crossentropy"
 # LOSS = tf.nn.sigmoid_cross_entropy_with_logits
-# METRICS = ['accuracy']
+
 METRICS = ['accuracy']
 NAME_CHECKPOINT = 'model_checkpoint.hdf5'
 
@@ -196,7 +196,7 @@ model = tf.keras.Sequential([
     tf.keras.layers.Flatten(input_shape=(8192,)),
     # tf.keras.layers.Dropout(0.2, input_shape=(8192,)),
     tf.keras.layers.Dense(
-        256, 
+        128, 
         activation=LeakyReLU(alpha=0.1), 
         kernel_regularizer=KERNEL_REG, 
         bias_regularizer=BIAS_REG, 
@@ -206,23 +206,23 @@ model = tf.keras.Sequential([
     # tf.keras.layers.BatchNormalization(),
     #---
     tf.keras.layers.Dense(
-        256, 
+        128, 
         activation=LeakyReLU(alpha=0.1), 
         kernel_regularizer=KERNEL_REG, 
         bias_regularizer=BIAS_REG, 
         activity_regularizer=ACTI_REG
         ),
-    tf.keras.layers.Dropout(0.2),
+    tf.keras.layers.Dropout(DROPOUT),
     # tf.keras.layers.BatchNormalization(),
     #---
     tf.keras.layers.Dense(
-        256, 
+        128, 
         activation=LeakyReLU(alpha=0.1), 
         kernel_regularizer=KERNEL_REG, 
         bias_regularizer=BIAS_REG, 
         activity_regularizer=ACTI_REG
         ),
-    # tf.keras.layers.Dropout(0.2),
+    # tf.keras.layers.Dropout(DROPOUT),
     # tf.keras.layers.BatchNormalization(),
     # --- Output layer
     tf.keras.layers.Dense(109, activation='sigmoid'),
