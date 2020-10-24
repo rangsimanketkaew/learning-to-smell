@@ -24,6 +24,7 @@ from tensorflow.keras.layers import Dense, Flatten, Activation, Dropout, BatchNo
 from tensorflow.keras.callbacks import ModelCheckpoint, ReduceLROnPlateau, EarlyStopping, TensorBoard
 from tensorflow.keras.optimizers import Adam, SGD
 from tensorflow.keras.regularizers import l1, l2, l1_l2
+from tensorflow.keras.utils import multi_gpu_model
 # Plot
 from matplotlib import pyplot as plt
 
@@ -41,6 +42,7 @@ KERNEL_REG = l1_l2(l1=1e-5, l2=1e-4)
 BIAS_REG = l2(1e-4)
 ACTI_REG = l2(1e-5)
 VALID_SPLIT = 0.2
+# GPU = 2
 
 # OPTIMIZER = SGD(lr=0.005, decay=1e-6, momentum=0.9, nesterov=True)
 OPTIMIZER = Adam(lr=0.001, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
@@ -265,6 +267,19 @@ model = Sequential([
     BatchNormalization(),
     Dense(109, activation=ACT_OUTPUT),
 ])
+
+# Now can train only on a single GPU - failed with multi-GPUs. Needs to be fixed!
+#if GPU > 1:
+#    # disable eager execution
+#    tf.compat.v1.disable_eager_execution()
+#    print("[INFO] training with {} GPUs...".format(GPU))
+#    # we'll store a copy of the model on *every* GPU and then combine
+#    # the results from the gradient updates on the CPU
+#    # tf.device("/cpu:0")
+#    # tf.compat.v1.reset_default_graph() 
+#    # backend.clear_session()
+#    # make the model parallel
+#    model = multi_gpu_model(model, gpus=GPU)
 
 model.compile(optimizer=OPTIMIZER,
               loss=LOSS,
