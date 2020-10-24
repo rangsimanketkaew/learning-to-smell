@@ -8,7 +8,6 @@ import numpy as np
 import pandas as pd
 from pprint import pprint
 
-# import deepchem as dc
 # RDkit for fingerprinting and cheminformatics
 import rdkit
 from rdkit import Chem, DataStructs
@@ -20,38 +19,29 @@ from sklearn.model_selection import cross_validate, train_test_split
 # TensorFlow and Keras for deep learning
 import tensorflow as tf
 import tensorflow_addons as tfa
-from keras.models import Sequential
-from keras.layers import Dense, Dropout, Activation, LeakyReLU
-from keras.callbacks import ModelCheckpoint, ReduceLROnPlateau
-# from keras.regularizers import WeightRegularizer
-from keras.optimizers import Adam, SGD
-from keras.regularizers import l1, l2, l1_l2
-
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense, Flatten, Activation, Dropout, BatchNormalization, LeakyReLU
+from tensorflow.keras.callbacks import ModelCheckpoint, ReduceLROnPlateau, EarlyStopping, TensorBoard
+from tensorflow.keras.optimizers import Adam, SGD
+from tensorflow.keras.regularizers import l1, l2, l1_l2
 # Plot
 from matplotlib import pyplot as plt
 
-###############
-# Read dataset
-###############
-train_set = pd.read_csv("data/train.csv")
-test_set = pd.read_csv("data/test.csv")
-vocab = open("data/vocabulary.txt", 'r').read().split("\n")
-sample_sub = pd.read_csv("data/sample_submission.csv")
-
-# submission file name
-submission_file_path = "submission.csv"
 
 #################
 # Hyper parameter
 #################
 
-N_EPOCHS = 200
+N_EPOCHS = 500
 BATCH_SIZE = 100
-VALID_SPLIT = 0.2
+ACT_HIDDEN = LeakyReLU(alpha=0.1)
+ACT_OUTPUT = 'sigmoid'
 DROPOUT = 0.2
 KERNEL_REG = l1_l2(l1=1e-5, l2=1e-4)
 BIAS_REG = l2(1e-4)
 ACTI_REG = l2(1e-5)
+VALID_SPLIT = 0.2
+
 # OPTIMIZER = opt_sgd = SGD(lr=0.005, decay=1e-6, momentum=0.9, nesterov=True)
 OPTIMIZER = opt_adam = Adam(lr=0.001, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
 
@@ -69,11 +59,59 @@ LOSS = "binary_crossentropy"
 METRICS = ['accuracy']
 NAME_CHECKPOINT = 'model_checkpoint.hdf5'
 
+##########
+# Callback
+##########
+
+checkpointer = ModelCheckpoint(
+    filepath=NAME_CHECKPOINT,
+    monitor='val_acc',
+    mode='max',
+    verbose=0,
+    save_best_only=False
+    )
+reduce_lr = ReduceLROnPlateau(
+    monitor='loss', 
+    factor=0.1, 
+    patience=5, 
+    min_lr=0.00001, 
+    verbose=1
+    )
+earlystop = EarlyStopping(
+    monitor='val_loss', 
+    min_delta=0,
+    patience=50, 
+    mode='auto', 
+    verbose=1
+    )
+
+cb = [
+    checkpointer, 
+    reduce_lr, 
+    earlystop
+    ]
+
+######
 # plot
+######
+
 HIST_ACC = 'accuracy'
 HIST_VAL_ACC = 'val_accuracy'
 HIST_LOSS = 'loss'
 HIST_VAL_LOSS = 'val_loss'
+
+############################################################################
+
+###############
+# Read dataset
+###############
+train_set = pd.read_csv("data/train.csv")
+test_set = pd.read_csv("data/test.csv")
+vocab = open("data/vocabulary.txt", 'r').read().split("\n")
+sample_sub = pd.read_csv("data/sample_submission.csv")
+
+# submission file name
+submission_file_path = "submission.csv"
 
 ###############
 # Split dataset
@@ -94,8 +132,8 @@ train_label = [i.split(',') for i in train_label]
 train_label_sub = [item for sublist in train_label for item in sublist]
 
 # count the number of occurences for each label
-counts = dict((x, train_label_sub.count(x)) for x in set(train_label_sub))
-pprint(counts)
+# counts = dict((x, train_label_sub.count(x)) for x in set(train_label_sub))
+# pprint(counts)
 
 ##############
 # Encode input
@@ -173,7 +211,7 @@ train_label_enc = np.zeros((len(train_label), len(vocab)), dtype=np.float32)
 
 for i in range(len(train_label)):
     train_label_enc[i] = onehot_sentence(train_label[i])
-print(train_label_enc.shape)
+# print(train_label_enc.shape)
 
 # lab = LabelEncoder()
 # lab.fit(vocab)
@@ -191,43 +229,19 @@ print(train_label_enc.shape)
 # mol = data['mol']
 # print(mol.shape)
 
-model = tf.keras.Sequential([
-    # tf.keras.layers.Flatten(input_shape=(240, 55)),
-    tf.keras.layers.Flatten(input_shape=(8192,)),
-    # tf.keras.layers.Dropout(0.2, input_shape=(8192,)),
-    tf.keras.layers.Dense(
-        128, 
-        activation=LeakyReLU(alpha=0.1), 
-        kernel_regularizer=KERNEL_REG, 
-        bias_regularizer=BIAS_REG, 
-        activity_regularizer=ACTI_REG
-        ),
-    tf.keras.layers.Dropout(DROPOUT),
-    # tf.keras.layers.BatchNormalization(),
-    #---
-    tf.keras.layers.Dense(
-        128, 
-        activation=LeakyReLU(alpha=0.1), 
-        kernel_regularizer=KERNEL_REG, 
-        bias_regularizer=BIAS_REG, 
-        activity_regularizer=ACTI_REG
-        ),
-    tf.keras.layers.Dropout(DROPOUT),
-    # tf.keras.layers.BatchNormalization(),
-    #---
-    tf.keras.layers.Dense(
-        128, 
-        activation=LeakyReLU(alpha=0.1), 
-        kernel_regularizer=KERNEL_REG, 
-        bias_regularizer=BIAS_REG, 
-        activity_regularizer=ACTI_REG
-        ),
-    # tf.keras.layers.Dropout(DROPOUT),
-    # tf.keras.layers.BatchNormalization(),
-    # --- Output layer
-    tf.keras.layers.Dense(109, activation='sigmoid'),
-    # tf.keras.layers.Dense(109, activation='softmax')
-    # tf.keras.layers.BatchNormalization()
+model = Sequential([
+    Flatten(input_shape=(8192,)),
+    # Dropout(0.2, input_shape=(8192,)),
+    Dense(128, activation=ACT_HIDDEN, kernel_regularizer=KERNEL_REG, bias_regularizer=BIAS_REG, activity_regularizer=ACTI_REG),
+    BatchNormalization(),
+    Dropout(DROPOUT),
+    Dense(128, activation=ACT_HIDDEN, kernel_regularizer=KERNEL_REG, bias_regularizer=BIAS_REG, activity_regularizer=ACTI_REG),
+    BatchNormalization(),
+    Dropout(DROPOUT/2),
+    Dense(128, activation=ACT_HIDDEN, kernel_regularizer=KERNEL_REG, bias_regularizer=BIAS_REG, activity_regularizer=ACTI_REG),
+    BatchNormalization(),
+    Dropout(DROPOUT/4),
+    Dense(109, activation=ACT_OUTPUT),
 ])
 
 model.compile(optimizer=OPTIMIZER,
@@ -235,15 +249,6 @@ model.compile(optimizer=OPTIMIZER,
               metrics=METRICS,
               )
 
-print(model.summary())
-
-# Callback
-reduce_lr = ReduceLROnPlateau(monitor='loss', factor=0.5,patience=50, min_lr=0.00001, verbose=1)
-checkpointer = ModelCheckpoint(filepath=NAME_CHECKPOINT,
-                               monitor='val_acc',
-                               mode=max,
-                               verbose=1,
-                               save_best_only=False)
 
 history = model.fit(
     train_set_enc,
@@ -253,28 +258,31 @@ history = model.fit(
     batch_size=BATCH_SIZE,
     epochs=N_EPOCHS,
     use_multiprocessing=True,
-    callbacks=[checkpointer]
+    verbose=1,
+    callbacks=[cb]
 )
 
+
+print(model.summary())
 # list all data in history
 # pprint(history.history.keys())
-
 print("")
-print(f"Max accuracy     : {np.max(history.history[HIST_ACC])}")
-print(f"Max val accuracy : {np.max(history.history[HIST_VAL_ACC])}")
-print(f"Min loss         : {np.min(history.history[HIST_LOSS])}")
-print(f"Min val loss     : {np.min(history.history[HIST_VAL_LOSS])}")
+print(f"Accuracy     : {history.history[HIST_ACC][-1]}")
+print(f"Val accuracy : {history.history[HIST_VAL_ACC][-1]}")
+print(f"Min loss     : {np.min(history.history[HIST_LOSS])}")
+print(f"Min val loss : {np.min(history.history[HIST_VAL_LOSS])}")
 
 # summarize history for accuracy
+plt.figure(1)
 plt.plot(history.history[HIST_ACC])
 plt.plot(history.history[HIST_VAL_ACC])
 plt.title('model accuracy')
 plt.ylabel('accuracy')
 plt.xlabel('epoch')
 plt.legend(['train', 'test'], loc='upper left')
-plt.show()
 
 # summarize history for loss
+plt.figure(2)
 plt.plot(history.history[HIST_LOSS])
 plt.plot(history.history[HIST_VAL_LOSS])
 plt.title('model loss')
