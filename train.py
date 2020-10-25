@@ -19,7 +19,7 @@ from sklearn.model_selection import cross_validate, train_test_split
 # TensorFlow and Keras for deep learning
 import tensorflow as tf
 import tensorflow_addons as tfa
-from tensorflow.keras.models import Sequential
+from tensorflow.keras.models import Sequential, save_model
 from tensorflow.keras.layers import Dense, Flatten, Activation, Dropout, BatchNormalization, LeakyReLU
 from tensorflow.keras.callbacks import ModelCheckpoint, ReduceLROnPlateau, EarlyStopping, TensorBoard
 from tensorflow.keras.optimizers import Adam, SGD
@@ -33,7 +33,7 @@ from matplotlib import pyplot as plt
 # Hyper parameter
 #################
 
-N_EPOCHS = 500
+N_EPOCHS = 50
 BATCH_SIZE = 100
 ACT_HIDDEN = LeakyReLU(alpha=0.1)
 ACT_OUTPUT = 'sigmoid'
@@ -61,7 +61,8 @@ LOSS = "binary_crossentropy"
 
 METRICS = ['accuracy']
 NAME_CHECKPOINT = 'model_checkpoint.hdf5'
-SAVE_SUBMISSION = True
+PATH_SAVE_MODEL = 'model.hdf5'
+SAVE_PREDICTION = True
 
 ##########
 # Callback
@@ -72,7 +73,7 @@ checkpointer = ModelCheckpoint(
     monitor='val_acc',
     mode='max',
     verbose=0,
-    save_best_only=True,
+    save_best_only=False,
     save_weights_only=False
     )
 reduce_lr = ReduceLROnPlateau(
@@ -85,15 +86,15 @@ reduce_lr = ReduceLROnPlateau(
 earlystop = EarlyStopping(
     monitor='val_loss', 
     min_delta=0,
-    patience=50, 
+    patience=15, 
     mode='auto', 
     verbose=1
     )
 
 cb = [
-    checkpointer, 
-    # reduce_lr, 
-    # earlystop
+    checkpointer,
+    reduce_lr,
+    earlystop
     ]
 
 ######
@@ -111,6 +112,7 @@ HIST_VAL_LOSS = 'val_loss'
 # Read dataset
 ###############
 train_set = pd.read_csv("data/train.csv")
+# train_set = pd.read_csv("data/augmentation/train_aug_random100.csv")
 test_set = pd.read_csv("data/test.csv")
 vocab = open("data/vocabulary.txt", 'r').read().split("\n")
 sample_sub = pd.read_csv("data/sample_submission.csv")
@@ -196,16 +198,21 @@ def morgan_fp(smiles):
     npfp = np.array(list(fp.ToBitString())).astype('int8')
     return npfp
 
-def maccs_fp(smiles):
-    mol = Chem.MolFromSmiles(smiles)
-    fp = MACCSkeys.GenMACCSKeys(mol)
-    npfp = np.array(list(fp.ToBitString())).astype('int8')
-    return npfp
-
 
 train_set_enc = np.array([morgan_fp(i) for i in train_set])
 valid_set_enc = np.array([morgan_fp(i) for i in valid_set])
 test_set_enc = np.array([morgan_fp(i) for i in test_set])
+
+#=====================
+# 3) MACCS fingerprint
+#=====================
+
+
+# def maccs_fp(smiles):
+#     mol = Chem.MolFromSmiles(smiles)
+#     fp = MACCSkeys.GenMACCSKeys(mol)
+#     npfp = np.array(list(fp.ToBitString())).astype('int8')
+#     return npfp
 
 
 ################
@@ -240,6 +247,7 @@ for i in range(len(valid_label)):
 # Build the model
 #################
 
+
 # data = np.load("data/train_set_enc.npz")
 # mol = data['mol']
 # print(mol.shape)
@@ -256,15 +264,15 @@ model = Sequential([
     Dense(2048, activation=ACT_HIDDEN, kernel_regularizer=KERNEL_REG, bias_regularizer=BIAS_REG, activity_regularizer=ACTI_REG),
     Dropout(DROPOUT),
     BatchNormalization(),
-    Dense(2048, activation=ACT_HIDDEN, kernel_regularizer=KERNEL_REG, bias_regularizer=BIAS_REG, activity_regularizer=ACTI_REG),
-    Dropout(DROPOUT),
-    BatchNormalization(),
-    Dense(2048, activation=ACT_HIDDEN, kernel_regularizer=KERNEL_REG, bias_regularizer=BIAS_REG, activity_regularizer=ACTI_REG),
-    Dropout(DROPOUT),
-    BatchNormalization(),
-    Dense(2048, activation=ACT_HIDDEN, kernel_regularizer=KERNEL_REG, bias_regularizer=BIAS_REG, activity_regularizer=ACTI_REG),
-    Dropout(DROPOUT),
-    BatchNormalization(),
+    # Dense(2048, activation=ACT_HIDDEN, kernel_regularizer=KERNEL_REG, bias_regularizer=BIAS_REG, activity_regularizer=ACTI_REG),
+    # Dropout(DROPOUT),
+    # BatchNormalization(),
+    # Dense(2048, activation=ACT_HIDDEN, kernel_regularizer=KERNEL_REG, bias_regularizer=BIAS_REG, activity_regularizer=ACTI_REG),
+    # Dropout(DROPOUT),
+    # BatchNormalization(),
+    # Dense(2048, activation=ACT_HIDDEN, kernel_regularizer=KERNEL_REG, bias_regularizer=BIAS_REG, activity_regularizer=ACTI_REG),
+    # Dropout(DROPOUT),
+    # BatchNormalization(),
     Dense(109, activation=ACT_OUTPUT),
 ])
 
@@ -300,8 +308,17 @@ history = model.fit(
     callbacks=[cb]
 )
 
-
 print(model.summary())
+
+# Save model
+save_model(
+    model, PATH_SAVE_MODEL, overwrite=True, include_optimizer=True, save_format='h5',
+    signatures=None, options=None
+)
+
+print(f"Model has been saved to {PATH_SAVE_MODEL}")
+print(f"Checkpoint has been saved to {NAME_CHECKPOINT}")
+
 # list all data in history
 # pprint(history.history.keys())
 print("")
@@ -370,8 +387,8 @@ pred_label = {
 df = pd.DataFrame(pred_label)
 # pprint(df)
 
-if SAVE_SUBMISSION:
-    print("Writing Submission (csv) to : ", submission_file_path)
+if SAVE_PREDICTION:
+    print(f"Writing Submission (csv) to : {submission_file_path}")
     df.to_csv(
         submission_file_path,
         index=False
