@@ -29,6 +29,7 @@ from tensorflow.keras.utils import multi_gpu_model
 # Plot
 from matplotlib import pyplot as plt
 
+import loss
 
 #################
 # Hyper parameter
@@ -48,16 +49,8 @@ VALID_SPLIT = 0.2
 # OPTIMIZER = SGD(lr=0.005, decay=1e-6, momentum=0.9, nesterov=True)
 OPTIMIZER = Adam(lr=0.001, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
 
-# tf.config.run_functions_eagerly(True)
-def my_hamming(y_true, y_pred):
-    """Hamming Loss"""
-    return tfa.metrics.hamming.hamming_loss_fn(y_true=y_true, y_pred=y_pred, mode="multiclass", threshold=0.8)
-
-def my_npair(y_true, y_pred):
-    """NPair Loss"""
-    return tfa.losses.npairs_multilabel_loss(y_true=y_true, y_pred=y_pred)
-
 LOSS = "binary_crossentropy"
+# LOSS = loss.my_jaccard
 # LOSS = tf.nn.sigmoid_cross_entropy_with_logits
 
 METRICS = ['accuracy']
@@ -116,8 +109,8 @@ HIST_VAL_LOSS = 'val_loss'
 ###############
 # Read dataset
 ###############
-# train_set = pd.read_csv("data/train.csv")
-train_set = pd.read_csv("data/augmentation/train_aug_random100.csv")
+train_set = pd.read_csv("data/train.csv")
+# train_set = pd.read_csv("data/augmentation/train_aug_random100.csv")
 test_set = pd.read_csv("data/test.csv")
 vocab = open("data/vocabulary.txt", 'r').read().split("\n")
 sample_sub = pd.read_csv("data/sample_submission.csv")
@@ -199,7 +192,7 @@ print("Real Train set : ", len(test_set))
 
 def morgan_fp(smiles):
     mol = Chem.MolFromSmiles(smiles)
-    fp = AllChem.GetMorganFingerprintAsBitVect(mol, 3, nBits=8192)
+    fp = AllChem.GetMorganFingerprintAsBitVect(mol, 3, nBits=4096)
     npfp = np.array(list(fp.ToBitString())).astype('int8')
     return npfp
 
@@ -258,32 +251,32 @@ for i in range(len(valid_label)):
 # print(mol.shape)
 
 model = Sequential([
-    Flatten(input_shape=(8192,)),
+    Flatten(input_shape=(4096,)),
     # Dropout(0.2, input_shape=(8192,)),
-    Dense(1028, activation=ACT_HIDDEN, kernel_regularizer=KERNEL_REG, bias_regularizer=BIAS_REG, activity_regularizer=ACTI_REG),
+    Dense(256, activation=ACT_HIDDEN, kernel_regularizer=KERNEL_REG, bias_regularizer=BIAS_REG, activity_regularizer=ACTI_REG),
     Dropout(DROPOUT),
     BatchNormalization(),
-    Dense(1028, activation=ACT_HIDDEN, kernel_regularizer=KERNEL_REG, bias_regularizer=BIAS_REG, activity_regularizer=ACTI_REG),
+    Dense(256, activation=ACT_HIDDEN, kernel_regularizer=KERNEL_REG, bias_regularizer=BIAS_REG, activity_regularizer=ACTI_REG),
     Dropout(DROPOUT),
     BatchNormalization(),
-    Dense(1028, activation=ACT_HIDDEN, kernel_regularizer=KERNEL_REG, bias_regularizer=BIAS_REG, activity_regularizer=ACTI_REG),
+    Dense(256, activation=ACT_HIDDEN, kernel_regularizer=KERNEL_REG, bias_regularizer=BIAS_REG, activity_regularizer=ACTI_REG),
     Dropout(DROPOUT),
     BatchNormalization(),
-    Dense(1028, activation=ACT_HIDDEN, kernel_regularizer=KERNEL_REG, bias_regularizer=BIAS_REG, activity_regularizer=ACTI_REG),
-    Dropout(DROPOUT),
-    BatchNormalization(),
-    Dense(1028, activation=ACT_HIDDEN, kernel_regularizer=KERNEL_REG, bias_regularizer=BIAS_REG, activity_regularizer=ACTI_REG),
-    Dropout(DROPOUT),
-    BatchNormalization(),
-    Dense(1028, activation=ACT_HIDDEN, kernel_regularizer=KERNEL_REG, bias_regularizer=BIAS_REG, activity_regularizer=ACTI_REG),
-    Dropout(DROPOUT),
-    BatchNormalization(),
-    Dense(1028, activation=ACT_HIDDEN, kernel_regularizer=KERNEL_REG, bias_regularizer=BIAS_REG, activity_regularizer=ACTI_REG),
-    Dropout(DROPOUT),
-    BatchNormalization(),
-    Dense(1028, activation=ACT_HIDDEN, kernel_regularizer=KERNEL_REG, bias_regularizer=BIAS_REG, activity_regularizer=ACTI_REG),
-    Dropout(DROPOUT),
-    BatchNormalization(),
+    # Dense(1028, activation=ACT_HIDDEN, kernel_regularizer=KERNEL_REG, bias_regularizer=BIAS_REG, activity_regularizer=ACTI_REG),
+    # Dropout(DROPOUT),
+    # BatchNormalization(),
+    # Dense(1028, activation=ACT_HIDDEN, kernel_regularizer=KERNEL_REG, bias_regularizer=BIAS_REG, activity_regularizer=ACTI_REG),
+    # Dropout(DROPOUT),
+    # BatchNormalization(),
+    # Dense(1028, activation=ACT_HIDDEN, kernel_regularizer=KERNEL_REG, bias_regularizer=BIAS_REG, activity_regularizer=ACTI_REG),
+    # Dropout(DROPOUT),
+    # BatchNormalization(),
+    # Dense(1028, activation=ACT_HIDDEN, kernel_regularizer=KERNEL_REG, bias_regularizer=BIAS_REG, activity_regularizer=ACTI_REG),
+    # Dropout(DROPOUT),
+    # BatchNormalization(),
+    # Dense(1028, activation=ACT_HIDDEN, kernel_regularizer=KERNEL_REG, bias_regularizer=BIAS_REG, activity_regularizer=ACTI_REG),
+    # Dropout(DROPOUT),
+    # BatchNormalization(),
     Dense(109, activation=ACT_OUTPUT),
 ])
 
