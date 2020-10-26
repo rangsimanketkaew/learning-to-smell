@@ -4,6 +4,7 @@
 # October 2020
 ####################
 
+import os
 import numpy as np
 import pandas as pd
 from pprint import pprint
@@ -33,7 +34,7 @@ from matplotlib import pyplot as plt
 # Hyper parameter
 #################
 
-N_EPOCHS = 50
+N_EPOCHS = 100
 BATCH_SIZE = 100
 ACT_HIDDEN = LeakyReLU(alpha=0.1)
 ACT_OUTPUT = 'sigmoid'
@@ -63,6 +64,10 @@ METRICS = ['accuracy']
 NAME_CHECKPOINT = 'model_checkpoint.hdf5'
 PATH_SAVE_MODEL = 'model.hdf5'
 SAVE_PREDICTION = True
+SHOW_FIGURE = False
+
+if os.name == "posix":
+    os.system("export HDF5_USE_FILE_LOCKING=FALSE")
 
 ##########
 # Callback
@@ -111,8 +116,8 @@ HIST_VAL_LOSS = 'val_loss'
 ###############
 # Read dataset
 ###############
-train_set = pd.read_csv("data/train.csv")
-# train_set = pd.read_csv("data/augmentation/train_aug_random100.csv")
+# train_set = pd.read_csv("data/train.csv")
+train_set = pd.read_csv("data/augmentation/train_aug_random100.csv")
 test_set = pd.read_csv("data/test.csv")
 vocab = open("data/vocabulary.txt", 'r').read().split("\n")
 sample_sub = pd.read_csv("data/sample_submission.csv")
@@ -255,24 +260,30 @@ for i in range(len(valid_label)):
 model = Sequential([
     Flatten(input_shape=(8192,)),
     # Dropout(0.2, input_shape=(8192,)),
-    Dense(2048, activation=ACT_HIDDEN, kernel_regularizer=KERNEL_REG, bias_regularizer=BIAS_REG, activity_regularizer=ACTI_REG),
+    Dense(1028, activation=ACT_HIDDEN, kernel_regularizer=KERNEL_REG, bias_regularizer=BIAS_REG, activity_regularizer=ACTI_REG),
     Dropout(DROPOUT),
     BatchNormalization(),
-    Dense(2048, activation=ACT_HIDDEN, kernel_regularizer=KERNEL_REG, bias_regularizer=BIAS_REG, activity_regularizer=ACTI_REG),
+    Dense(1028, activation=ACT_HIDDEN, kernel_regularizer=KERNEL_REG, bias_regularizer=BIAS_REG, activity_regularizer=ACTI_REG),
     Dropout(DROPOUT),
     BatchNormalization(),
-    Dense(2048, activation=ACT_HIDDEN, kernel_regularizer=KERNEL_REG, bias_regularizer=BIAS_REG, activity_regularizer=ACTI_REG),
+    Dense(1028, activation=ACT_HIDDEN, kernel_regularizer=KERNEL_REG, bias_regularizer=BIAS_REG, activity_regularizer=ACTI_REG),
     Dropout(DROPOUT),
     BatchNormalization(),
-    # Dense(2048, activation=ACT_HIDDEN, kernel_regularizer=KERNEL_REG, bias_regularizer=BIAS_REG, activity_regularizer=ACTI_REG),
-    # Dropout(DROPOUT),
-    # BatchNormalization(),
-    # Dense(2048, activation=ACT_HIDDEN, kernel_regularizer=KERNEL_REG, bias_regularizer=BIAS_REG, activity_regularizer=ACTI_REG),
-    # Dropout(DROPOUT),
-    # BatchNormalization(),
-    # Dense(2048, activation=ACT_HIDDEN, kernel_regularizer=KERNEL_REG, bias_regularizer=BIAS_REG, activity_regularizer=ACTI_REG),
-    # Dropout(DROPOUT),
-    # BatchNormalization(),
+    Dense(1028, activation=ACT_HIDDEN, kernel_regularizer=KERNEL_REG, bias_regularizer=BIAS_REG, activity_regularizer=ACTI_REG),
+    Dropout(DROPOUT),
+    BatchNormalization(),
+    Dense(1028, activation=ACT_HIDDEN, kernel_regularizer=KERNEL_REG, bias_regularizer=BIAS_REG, activity_regularizer=ACTI_REG),
+    Dropout(DROPOUT),
+    BatchNormalization(),
+    Dense(1028, activation=ACT_HIDDEN, kernel_regularizer=KERNEL_REG, bias_regularizer=BIAS_REG, activity_regularizer=ACTI_REG),
+    Dropout(DROPOUT),
+    BatchNormalization(),
+    Dense(1028, activation=ACT_HIDDEN, kernel_regularizer=KERNEL_REG, bias_regularizer=BIAS_REG, activity_regularizer=ACTI_REG),
+    Dropout(DROPOUT),
+    BatchNormalization(),
+    Dense(1028, activation=ACT_HIDDEN, kernel_regularizer=KERNEL_REG, bias_regularizer=BIAS_REG, activity_regularizer=ACTI_REG),
+    Dropout(DROPOUT),
+    BatchNormalization(),
     Dense(109, activation=ACT_OUTPUT),
 ])
 
@@ -330,25 +341,26 @@ print("-----------")
 print(f"Min loss         : {np.min(history.history[HIST_LOSS])}")
 print(f"Min val loss     : {np.min(history.history[HIST_VAL_LOSS])}")
 
-# summarize history for accuracy
-plt.figure(1)
-plt.plot(history.history[HIST_ACC])
-plt.plot(history.history[HIST_VAL_ACC])
-plt.title('model accuracy')
-plt.ylabel('accuracy')
-plt.xlabel('epoch')
-plt.legend(['train', 'test'], loc='upper left')
-
-# summarize history for loss
-plt.figure(2)
-plt.plot(history.history[HIST_LOSS])
-plt.plot(history.history[HIST_VAL_LOSS])
-plt.title('model loss')
-plt.ylabel('loss')
-plt.xlabel('epoch')
-plt.legend(['train', 'test'], loc='upper left')
-plt.show()  # show two plots
-
+if SHOW_FIGURE:
+    # summarize history for accuracy
+    plt.figure(1)
+    plt.plot(history.history[HIST_ACC])
+    plt.plot(history.history[HIST_VAL_ACC])
+    plt.title('model accuracy')
+    plt.ylabel('accuracy')
+    plt.xlabel('epoch')
+    plt.legend(['train', 'test'], loc='upper left')
+    
+    # summarize history for loss
+    plt.figure(2)
+    plt.plot(history.history[HIST_LOSS])
+    plt.plot(history.history[HIST_VAL_LOSS])
+    plt.title('model loss')
+    plt.ylabel('loss')
+    plt.xlabel('epoch')
+    plt.legend(['train', 'test'], loc='upper left')
+    plt.show()  # show two plots
+    
 ####################
 # Evaluate accuracy
 ####################
