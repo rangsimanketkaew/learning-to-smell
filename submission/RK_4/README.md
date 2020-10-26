@@ -4,7 +4,7 @@
 - Number of training sample: 249645
 - 6 LeakyReLu hidden layers each with 2048 nodes
 - Output layer uses sigmoid
-- No batch normalization
+- Batch normalization for all hidden layers
 
 ```
 #################
