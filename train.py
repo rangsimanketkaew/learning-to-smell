@@ -45,7 +45,7 @@ DROPOUT = 0.2
 KERNEL_REG = l1_l2(l1=1e-5, l2=1e-4)
 BIAS_REG = l2(1e-4)
 ACTI_REG = l2(1e-5)
-VALID_SPLIT = 0.001
+VALID_SPLIT = 0.2
 # GPU = 2
 
 # OPTIMIZER = SGD(lr=0.005, decay=1e-6, momentum=0.9, nesterov=True)
@@ -69,7 +69,7 @@ if os.name == "posix":
 checkpointer = ModelCheckpoint(filepath=NAME_CHECKPOINT, monitor='val_acc', mode='max',
                                verbose=0, save_best_only=False, save_weights_only=False)
 reduce_lr = ReduceLROnPlateau(monitor='loss', factor=0.1, patience=5, min_lr=0.00001, verbose=1)
-earlystop = EarlyStopping(monitor='val_loss', min_delta=0, patience=15, mode='auto', verbose=1)
+earlystop = EarlyStopping(monitor='val_loss', min_delta=0, patience=30, mode='auto', verbose=1)
 
 cb = [checkpointer, reduce_lr, earlystop]
 
@@ -83,19 +83,23 @@ submission_file_path = "submission.csv"
 
 ## Training data
 train_set_enc = np.load("data/train_set_fingerprint_8192bits.npz")['morgan']
+# train_set_enc = np.load("data/train_set_fingerprint_8192bits_random20.npz")['morgan']
+
+## Train label
+train_label = list(pd.read_csv("data/train.csv")['SENTENCE'])
+# train_label = list(pd.read_csv("data/augmentation/train_aug_random20.csv")['SENTENCE'])
+train_label = [i.split(',') for i in train_label]
+vocab = open("data/vocabulary.txt", 'r').read().split("\n")
+train_label_enc = np.zeros((len(train_label), len(vocab)), dtype=np.float32)
+for i in range(len(train_label)):
+    train_label_enc[i] = onehot_sentence(vocab, train_label[i])
+
+#---------------------------------------
 
 ## Test data
 test_set = pd.read_csv("data/test.csv")
 test_set = list(test_set['SMILES'])
 test_set_enc = np.load("data/test_set_fingerprint_8192bits.npz")['morgan']
-
-## Train label
-vocab = open("data/vocabulary.txt", 'r').read().split("\n")
-train_label = list(pd.read_csv("data/train.csv")['SENTENCE'])
-train_label = [i.split(',') for i in train_label]
-train_label_enc = np.zeros((len(train_label), len(vocab)), dtype=np.float32)
-for i in range(len(train_label)):
-    train_label_enc[i] = onehot_sentence(vocab, train_label[i])
 
 #---------------------------------------
 
@@ -114,20 +118,16 @@ train_set, valid_set, train_label, valid_label = train_test_split(train_set_enc,
 # Build the model
 #################
 
-# data = np.load("data/train_set_enc.npz")
-# mol = data['mol']
-# print(mol.shape)
-
 model = Sequential([
     Flatten(input_shape=(8192,)),
     # Dropout(0.2, input_shape=(8192,)),
-    Dense(256, activation=ACT_HIDDEN, kernel_regularizer=KERNEL_REG, bias_regularizer=BIAS_REG, activity_regularizer=ACTI_REG),
+    Dense(128, activation=ACT_HIDDEN, kernel_regularizer=KERNEL_REG, bias_regularizer=BIAS_REG, activity_regularizer=ACTI_REG),
     Dropout(DROPOUT),
     BatchNormalization(),
-    Dense(256, activation=ACT_HIDDEN, kernel_regularizer=KERNEL_REG, bias_regularizer=BIAS_REG, activity_regularizer=ACTI_REG),
+    Dense(128, activation=ACT_HIDDEN, kernel_regularizer=KERNEL_REG, bias_regularizer=BIAS_REG, activity_regularizer=ACTI_REG),
     Dropout(DROPOUT),
     BatchNormalization(),
-    Dense(256, activation=ACT_HIDDEN, kernel_regularizer=KERNEL_REG, bias_regularizer=BIAS_REG, activity_regularizer=ACTI_REG),
+    Dense(128, activation=ACT_HIDDEN, kernel_regularizer=KERNEL_REG, bias_regularizer=BIAS_REG, activity_regularizer=ACTI_REG),
     Dropout(DROPOUT),
     BatchNormalization(),
     # Dense(1028, activation=ACT_HIDDEN, kernel_regularizer=KERNEL_REG, bias_regularizer=BIAS_REG, activity_regularizer=ACTI_REG),
