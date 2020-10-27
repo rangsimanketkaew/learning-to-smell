@@ -8,39 +8,15 @@ from rdkit.Chem import rdchem
 
 from vdW_volume import get_vdw
 
+# training set
 train_set = pd.read_csv("data/train.csv")
 smiles_set = list(train_set['SMILES'])
 sentence_set = list(train_set['SENTENCE'])
 # print(sentence_set[0])
 
-###########################################
-### Randomly generate SMILES - augmentation
-###########################################
-
-all_smiles = []
-with open(f"data/augmentation/train_aug_random100.csv", "w") as f:
-    f.write("SMILES,SENTENCE\n")
-    for i, smile in enumerate(smiles_set):
-        mol = Chem.MolFromSmiles(smile)
-        smiles = []
-        ## Insert original smiles
-        smiles.append(smile)
-        for _ in range(100):
-            # smi = Chem.MolToSmiles(mol, doRandom=True)
-            try:
-                smi = Chem.MolToSmiles(mol, doRandom=True)
-            except:
-                pass
-            # print(smi)
-            smiles.append(smi)
-        print("Mol ", i, "done")
-        ## Remove duplicate smiles
-        smiles = list(set(smiles))
-        ## Write smiles and its sentence to file
-        for j in smiles:
-            f.write(f'{j},"{sentence_set[i]}"\n')
-
-    f.close()
+# test set
+test_set = pd.read_csv("data/test.csv")
+smiles_test_set = test_set['SMILES']
 
 # print(rdMolDescriptors.CalcMolFormula(mol))
 
@@ -67,11 +43,11 @@ with open(f"data/augmentation/train_aug_random100.csv", "w") as f:
 #######################
 ### Generate vdW volume
 #######################
-# with open("vdW_volume.txt", 'w') as f:
-#     for i in train_set:
-#         f.write(f"{get_vdw(i)}\n")
-#         print(get_vdw(i))
-# f.close
+with open("data/test_set_vdW_volume.txt", 'w') as f:
+    for i in smiles_test_set:
+        f.write(f"{get_vdw(i)}\n")
+        print(get_vdw(i))
+f.close
 
 def create_adjacency(mol):
     adjacency = Chem.GetAdjacencyMatrix(mol)
