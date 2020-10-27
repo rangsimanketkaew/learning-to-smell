@@ -2,18 +2,18 @@ import tensorflow_addons as tfa
 from tensorflow.keras import backend as K
 
 
-def my_hamming(y_true, y_pred):
+def humming_loss(y_true, y_pred):
     # tf.config.run_functions_eagerly(True)
     """Hamming Loss"""
     return tfa.metrics.hamming.hamming_loss_fn(y_true=y_true, y_pred=y_pred, mode="multiclass", threshold=0.8)
 
 
-def my_npair(y_true, y_pred):
+def npair_loss(y_true, y_pred):
     """NPair Loss"""
     return tfa.losses.npairs_multilabel_loss(y_true=y_true, y_pred=y_pred)
 
 
-def my_jaccard(y_true, y_pred, smooth=100):
+def jaccard_loss(y_true, y_pred, smooth=100):
     """Jaccard distance for semantic segmentation.
     Also known as the intersection-over-union loss.
 

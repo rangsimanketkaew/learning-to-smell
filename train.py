@@ -19,6 +19,9 @@ from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.model_selection import cross_validate, train_test_split
 # TensorFlow and Keras for deep learning
 import tensorflow as tf
+# tf.compat.v1.enable_eager_execution()  # usually turn on by default
+from tensorflow.python.framework.ops import disable_eager_execution
+disable_eager_execution()
 import tensorflow_addons as tfa
 from tensorflow.keras.models import Sequential, save_model
 from tensorflow.keras.layers import Dense, Flatten, Activation, Dropout, BatchNormalization, LeakyReLU
@@ -29,7 +32,7 @@ from tensorflow.keras.utils import multi_gpu_model
 # Plot
 from matplotlib import pyplot as plt
 
-import loss
+import loss, metric
 
 #################
 # Hyper parameter
@@ -50,10 +53,11 @@ VALID_SPLIT = 0.2
 OPTIMIZER = Adam(lr=0.001, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
 
 LOSS = "binary_crossentropy"
-# LOSS = loss.my_jaccard
+# LOSS = loss.jaccard_loss
 # LOSS = tf.nn.sigmoid_cross_entropy_with_logits
 
-METRICS = ['accuracy']
+# METRICS = ['accuracy']
+METRICS = [metric.jaccard_5sentences]
 NAME_CHECKPOINT = 'model_checkpoint.hdf5'
 PATH_SAVE_MODEL = 'model.hdf5'
 SAVE_PREDICTION = True
@@ -296,6 +300,7 @@ model = Sequential([
 model.compile(optimizer=OPTIMIZER,
               loss=LOSS,
               metrics=METRICS,
+            #   run_eagerly=True
               )
 
 
