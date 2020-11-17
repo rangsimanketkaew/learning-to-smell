@@ -41,7 +41,7 @@ def smiles_decoder(X):
 
 def morgan_fp(smiles):
     mol = Chem.MolFromSmiles(smiles)
-    fp = AllChem.GetMorganFingerprintAsBitVect(mol, radius=2, nBits=2048)
+    fp = AllChem.GetMorganFingerprintAsBitVect(mol, radius=2, nBits=512)
     npfp = np.array(list(fp.ToBitString())).astype('int8')
     return npfp
 
@@ -71,11 +71,11 @@ if __name__ == "__main__":
     # Morgan encoding
     print(f"Size of train set: {len(train_set)}")
     fingerprint = np.array([morgan_fp(i) for i in train_set])
-    np.savez_compressed("data/train_set_fingerprint_2048bits_radius2.npz", morgan=fingerprint)
+    np.savez_compressed("data/train_set_fingerprint_512bits_radius2.npz", morgan=fingerprint)
     print("NumPy compressed file has been saved!")
 
     fingerprint = np.array([morgan_fp(i) for i in test_set])
-    np.savez_compressed("data/test_set_fingerprint_2048bits_radius2.npz", morgan=fingerprint)
+    np.savez_compressed("data/test_set_fingerprint_512bits_radius2.npz", morgan=fingerprint)
     print("NumPy compressed file has been saved!")
 
     exit(0)

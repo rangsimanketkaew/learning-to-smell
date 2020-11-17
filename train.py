@@ -24,7 +24,7 @@ import tensorflow as tf
 # disable_eager_execution()
 import tensorflow_addons as tfa
 from tensorflow.keras.models import Sequential, save_model
-from tensorflow.keras.layers import Dense, Flatten, Activation, Dropout, BatchNormalization, LeakyReLU
+from tensorflow.keras.layers import Dense, Flatten, Activation, Dropout, BatchNormalization, ReLU, LeakyReLU
 from tensorflow.keras.callbacks import ModelCheckpoint, ReduceLROnPlateau, EarlyStopping, TensorBoard
 from tensorflow.keras.optimizers import Adam, Adagrad, Adamax, SGD
 from tensorflow.keras.regularizers import l1, l2, l1_l2
@@ -38,9 +38,9 @@ from func import onehot_sentence
 
 ################################# SETTINGS #################################
 # Hyper parameter
-N_EPOCHS = 100
+N_EPOCHS = 300
 BATCH_SIZE = 64
-ACT_HIDDEN = LeakyReLU(alpha=0.1)
+ACT_HIDDEN = LeakyReLU(alpha=0.2)
 ACT_OUTPUT = 'sigmoid'
 DROPOUT = 0.1
 KERNEL_REG = l1_l2(l1=1e-5, l2=1e-4)
@@ -52,8 +52,8 @@ VALID_SPLIT = 0.2
 
 # OPTIMIZER = SGD(lr=0.005, decay=1e-6, momentum=0.9, nesterov=True)
 # OPTIMIZER = Adam(lr=0.001, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
-# OPTIMIZER = Adamax(lr=0.001, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
-OPTIMIZER = Adagrad(learning_rate=0.001, initial_accumulator_value=0.1, epsilon=1e-07, name="Adagrad")
+OPTIMIZER = Adamax(lr=0.001, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
+# OPTIMIZER = Adagrad(learning_rate=0.001, initial_accumulator_value=0.1, epsilon=1e-07, name="Adagrad")
 
 LOSS = "binary_crossentropy"
 # LOSS = "categorical_crossentropy"
@@ -63,8 +63,8 @@ LOSS = "binary_crossentropy"
 
 METRICS = ['accuracy']
 # METRICS = [metric.jaccard_5sentences]
-NAME_CHECKPOINT = 'model_checkpoint.hdf5'
-PATH_SAVE_MODEL = 'model.hdf5'
+NAME_CHECKPOINT = 'model_checkpoint.h5'
+PATH_SAVE_MODEL = 'model.h5'
 SAVE_PREDICTION = True
 SHOW_FIGURE = True
 
@@ -88,13 +88,13 @@ submission_file_path = "submission.csv"
 #---------------------------------------
 
 ## Training data
-train_set_fp = np.load("data/train_set_fingerprint_2048bits_radius2.npz")['morgan']
+train_set_fp = np.load("data/train_set_fingerprint_512bits_radius2.npz")['morgan']
 train_set_vdw = np.load("data/train_set_vdW_volume.npz")["volume"]
 print(train_set_fp.shape)
 print(train_set_vdw.shape)
 train_set_enc = np.concatenate((train_set_fp, train_set_vdw), axis=1)
 ## Test data
-test_set_fp = np.load("data/test_set_fingerprint_2048bits_radius2.npz")['morgan']
+test_set_fp = np.load("data/test_set_fingerprint_512bits_radius2.npz")['morgan']
 test_set_vdw = np.load("data/test_set_vdW_volume.npz")["volume"]
 test_set_enc = np.concatenate((test_set_fp, test_set_vdw), axis=1)
 # exit()
@@ -137,15 +137,24 @@ else:
 model = Sequential([
     Flatten(input_shape=(test_set_enc.shape[1],)),
     # Dropout(0.2, input_shape=(8192,)),
-    Dense(256, activation=ACT_HIDDEN, kernel_regularizer=KERNEL_REG, bias_regularizer=BIAS_REG, activity_regularizer=ACTI_REG),
+    Dense(256, activation=ACT_HIDDEN, 
+        # kernel_regularizer=KERNEL_REG, bias_regularizer=BIAS_REG, 
+        # activity_regularizer=ACTI_REG
+        ),
     Dropout(DROPOUT),
-    BatchNormalization(),
-    Dense(256, activation=ACT_HIDDEN, kernel_regularizer=KERNEL_REG, bias_regularizer=BIAS_REG, activity_regularizer=ACTI_REG),
+    # BatchNormalization(),
+    Dense(256, activation=ACT_HIDDEN, 
+        # kernel_regularizer=KERNEL_REG, bias_regularizer=BIAS_REG, 
+        # activity_regularizer=ACTI_REG
+        ),
+    # Dropout(DROPOUT),
+    # BatchNormalization(),
+    Dense(256, activation=ACT_HIDDEN, 
+        # kernel_regularizer=KERNEL_REG, bias_regularizer=BIAS_REG, 
+        # activity_regularizer=ACTI_REG
+        ),
     Dropout(DROPOUT),
-    BatchNormalization(),
-    Dense(256, activation=ACT_HIDDEN, kernel_regularizer=KERNEL_REG, bias_regularizer=BIAS_REG, activity_regularizer=ACTI_REG),
-    Dropout(DROPOUT),
-    BatchNormalization(),
+    # BatchNormalization(),
     # Dense(1028, activation=ACT_HIDDEN, kernel_regularizer=KERNEL_REG, bias_regularizer=BIAS_REG, activity_regularizer=ACTI_REG),
     # Dropout(DROPOUT),
     # BatchNormalization(),
@@ -260,8 +269,13 @@ pred_for_sub = []
 for i in range(pred.shape[0]):
     labels = [ind2word[i] for i in list(pred[i, :].argsort()[-15:][::-1])]
     labels_seq = []
-    for i in range(0, 15, 3):
-        labels_seq.append(",".join(labels[i:(i+3)]))
+    # for i in range(0, 15, 3):
+    #     labels_seq.append(",".join(labels[i:(i+3)]))
+    labels_seq.append(",".join([labels[0], labels[1], labels[2]]))
+    labels_seq.append(",".join([labels[0], labels[1], labels[3]]))
+    labels_seq.append(",".join([labels[0], labels[1], labels[4]]))
+    labels_seq.append(",".join([labels[0], labels[1], labels[5]]))
+    labels_seq.append(",".join([labels[0], labels[1], labels[6]]))
 
     pred_for_sub.append(";".join(labels_seq))
 

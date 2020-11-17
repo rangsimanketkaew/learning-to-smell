@@ -49,11 +49,11 @@ smiles_test_set = test_set['SMILES']
 #         print(get_vdw(i))
 # f.close
 
-vol = np.loadtxt("data/train_set_vdW_volume.txt").reshape(-1, 1)
-np.savez_compressed("data/train_set_vdW_volume.npz", volume=vol)
+# vol = np.loadtxt("data/train_set_vdW_volume.txt").reshape(-1, 1)
+# np.savez_compressed("data/train_set_vdW_volume.npz", volume=vol)
 
-vol = np.loadtxt("data/test_set_vdW_volume.txt").reshape(-1, 1)
-np.savez_compressed("data/test_set_vdW_volume.npz", volume=vol)
+# vol = np.loadtxt("data/test_set_vdW_volume.txt").reshape(-1, 1)
+# np.savez_compressed("data/test_set_vdW_volume.npz", volume=vol)
 
 def create_adjacency(mol):
     adjacency = Chem.GetAdjacencyMatrix(mol)

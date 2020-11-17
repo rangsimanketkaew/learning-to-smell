@@ -1,6 +1,7 @@
 test.py
 submission.csv
 *.hdf5
+*.h5
 .vscode
 
 # Byte-compiled / optimized / DLL files
