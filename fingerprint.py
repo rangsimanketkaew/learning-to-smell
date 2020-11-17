@@ -41,7 +41,7 @@ def smiles_decoder(X):
 
 def morgan_fp(smiles):
     mol = Chem.MolFromSmiles(smiles)
-    fp = AllChem.GetMorganFingerprintAsBitVect(mol, 3, nBits=8192)
+    fp = AllChem.GetMorganFingerprintAsBitVect(mol, radius=2, nBits=2048)
     npfp = np.array(list(fp.ToBitString())).astype('int8')
     return npfp
 
@@ -53,8 +53,8 @@ def maccs_fp(smiles):
 
 if __name__ == "__main__":
 
-    # train_set = pd.read_csv("data/train.csv")
-    train_set = pd.read_csv("data/augmentation/train_aug_random20.csv")
+    train_set = pd.read_csv("data/train.csv")
+    # train_set = pd.read_csv("data/augmentation/train_aug_random20.csv")
     train_set, train_label = list(train_set['SMILES']), list(train_set['SENTENCE'])
     train_label = [i.split(',') for i in train_label]
 
@@ -71,10 +71,11 @@ if __name__ == "__main__":
     # Morgan encoding
     print(f"Size of train set: {len(train_set)}")
     fingerprint = np.array([morgan_fp(i) for i in train_set])
-    np.savez_compressed("data/train_set_fingerprint_8192bits_random20.npz", morgan=fingerprint)
+    np.savez_compressed("data/train_set_fingerprint_2048bits_radius2.npz", morgan=fingerprint)
     print("NumPy compressed file has been saved!")
 
-    # fingerprint = np.array([morgan_fp(i) for i in test_set])
-    # np.savez_compressed("data/test_set_fingerprint_8192bits.npz", morgan=fingerprint)
+    fingerprint = np.array([morgan_fp(i) for i in test_set])
+    np.savez_compressed("data/test_set_fingerprint_2048bits_radius2.npz", morgan=fingerprint)
+    print("NumPy compressed file has been saved!")
 
     exit(0)
