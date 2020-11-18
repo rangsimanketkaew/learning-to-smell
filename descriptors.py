@@ -12,48 +12,12 @@ from vdW_volume import get_vdw
 train_set = pd.read_csv("data/train.csv")
 smiles_set = list(train_set['SMILES'])
 sentence_set = list(train_set['SENTENCE'])
-# print(sentence_set[0])
 
 # test set
 test_set = pd.read_csv("data/test.csv")
 smiles_test_set = test_set['SMILES']
 
-# print(rdMolDescriptors.CalcMolFormula(mol))
-
-# MolWeight = Descriptors.MolWt(mol)
-# NumHAcceptors = Lipinski.NumHAcceptors(mol)
-# NumHDonors = Lipinski.NumHDonors(mol)
-# NumRotatableBonds = rdMolDescriptors.CalcNumRotatableBonds(mol)
-# NumAliphaticCarbocycles = rdMolDescriptors.CalcNumAliphaticCarbocycles(mol)
-# NumAromaticRings = rdMolDescriptors.CalcNumAromaticRings(mol)
-# NumAromaticHeterocycles = rdMolDescriptors.CalcNumAromaticHeterocycles(mol)
-# NumSaturatedRings = rdMolDescriptors.CalcNumSaturatedRings(mol)
-
-# print(MolWeight)
-# print(NumHAcceptors)
-# print(NumHDonors)
-# print(NumRotatableBonds)
-# print(NumAliphaticCarbocycles)
-# print(NumAromaticRings)
-# print(NumAromaticHeterocycles)
-# print(NumSaturatedRings)
-# print("---")
-# print(mol.GetNumAtoms())
-
-#######################
-### Generate vdW volume
-#######################
-# with open("data/test_set_vdW_volume.txt", 'w') as f:
-#     for i in smiles_test_set:
-#         f.write(f"{get_vdw(i)}\n")
-#         print(get_vdw(i))
-# f.close
-
-# vol = np.loadtxt("data/train_set_vdW_volume.txt").reshape(-1, 1)
-# np.savez_compressed("data/train_set_vdW_volume.npz", volume=vol)
-
-# vol = np.loadtxt("data/test_set_vdW_volume.txt").reshape(-1, 1)
-# np.savez_compressed("data/test_set_vdW_volume.npz", volume=vol)
+## ============================================== ##
 
 def create_adjacency(mol):
     adjacency = Chem.GetAdjacencyMatrix(mol)
@@ -66,3 +30,58 @@ def create_adjacency(mol):
     return np.array(adjacency)
 
 # print(create_adjacency(mol))
+
+### Generate vdW volume
+# with open("data/test_set_vdW_volume.txt", 'w') as f:
+#     for i in smiles_test_set:
+#         f.write(f"{get_vdw(i)}\n")
+#         print(get_vdw(i))
+# f.close
+
+#----------------------------------------------
+
+train_feat = []
+for i in smiles_set:
+    mol = Chem.MolFromSmiles(i)
+    MolWeight = Descriptors.MolWt(mol)
+    NumHAcceptors = Lipinski.NumHAcceptors(mol)
+    NumHDonors = Lipinski.NumHDonors(mol)
+    NumRotatableBonds = rdMolDescriptors.CalcNumRotatableBonds(mol)
+    NumAliphaticCarbocycles = rdMolDescriptors.CalcNumAliphaticCarbocycles(mol)
+    NumAromaticRings = rdMolDescriptors.CalcNumAromaticRings(mol)
+    NumAromaticHeterocycles = rdMolDescriptors.CalcNumAromaticHeterocycles(mol)
+    NumSaturatedRings = rdMolDescriptors.CalcNumSaturatedRings(mol)
+    train_feat.append([MolWeight, NumHAcceptors, NumHDonors, NumRotatableBonds, 
+                    NumAliphaticCarbocycles, NumAromaticRings, NumAromaticHeterocycles, NumSaturatedRings])
+
+train_feat = np.array(train_feat)
+vol = np.loadtxt("data/train_set_vdW_volume.txt").reshape(-1, 1)
+# np.savez_compressed("data/train_set_vdW_volume.npz", volume=vol)
+train_feat = np.concatenate((train_feat, vol), axis=1)
+print(train_feat.shape)
+np.savez_compressed("data/train_set_all_descriptors.npz", features=train_feat)
+
+#----------------------------------------------
+
+test_feat = []
+for i in smiles_test_set:
+    mol = Chem.MolFromSmiles(i)
+    MolWeight = Descriptors.MolWt(mol)
+    NumHAcceptors = Lipinski.NumHAcceptors(mol)
+    NumHDonors = Lipinski.NumHDonors(mol)
+    NumRotatableBonds = rdMolDescriptors.CalcNumRotatableBonds(mol)
+    NumAliphaticCarbocycles = rdMolDescriptors.CalcNumAliphaticCarbocycles(mol)
+    NumAromaticRings = rdMolDescriptors.CalcNumAromaticRings(mol)
+    NumAromaticHeterocycles = rdMolDescriptors.CalcNumAromaticHeterocycles(mol)
+    NumSaturatedRings = rdMolDescriptors.CalcNumSaturatedRings(mol)
+    test_feat.append([MolWeight, NumHAcceptors, NumHDonors, NumRotatableBonds, 
+                    NumAliphaticCarbocycles, NumAromaticRings, NumAromaticHeterocycles, NumSaturatedRings])
+
+test_feat = np.array(test_feat)
+vol = np.loadtxt("data/test_set_vdW_volume.txt").reshape(-1, 1)
+# np.savez_compressed("data/test_set_vdW_volume.npz", volume=vol)
+test_feat = np.concatenate((test_feat, vol), axis=1)
+print(test_feat.shape)
+np.savez_compressed("data/test_set_all_descriptors.npz", features=test_feat)
+
+#----------------------------------------------
