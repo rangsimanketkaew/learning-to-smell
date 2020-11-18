@@ -4,7 +4,7 @@ import pandas as pd
 import rdkit
 from rdkit import Chem, DataStructs
 from rdkit.Chem import AllChem, rdMolDescriptors, Descriptors, Lipinski
-from rdkit.Chem import rdchem
+from rdkit.Chem import rdchem, Fragments
 
 from vdW_volume import get_vdw
 
@@ -41,9 +41,15 @@ def create_adjacency(mol):
 #----------------------------------------------
 
 train_feat = []
+frag = []
 for i in smiles_set:
     mol = Chem.MolFromSmiles(i)
     MolWeight = Descriptors.MolWt(mol)
+    HeavyAtomMolWt = Descriptors.HeavyAtomMolWt(mol)
+    MaxAbsPartialCharge = Descriptors.MaxAbsPartialCharge(mol)
+    MinAbsPartialCharge = Descriptors.MinAbsPartialCharge(mol)
+    NumRadicalElectrons = Descriptors.NumRadicalElectrons(mol)
+    NumValenceElectrons = Descriptors.NumValenceElectrons(mol)
     NumHAcceptors = Lipinski.NumHAcceptors(mol)
     NumHDonors = Lipinski.NumHDonors(mol)
     NumRotatableBonds = rdMolDescriptors.CalcNumRotatableBonds(mol)
@@ -51,22 +57,41 @@ for i in smiles_set:
     NumAromaticRings = rdMolDescriptors.CalcNumAromaticRings(mol)
     NumAromaticHeterocycles = rdMolDescriptors.CalcNumAromaticHeterocycles(mol)
     NumSaturatedRings = rdMolDescriptors.CalcNumSaturatedRings(mol)
-    train_feat.append([MolWeight, NumHAcceptors, NumHDonors, NumRotatableBonds, 
-                    NumAliphaticCarbocycles, NumAromaticRings, NumAromaticHeterocycles, NumSaturatedRings])
+    a = [MolWeight, HeavyAtomMolWt, MaxAbsPartialCharge, MinAbsPartialCharge, NumRadicalElectrons, 
+        NumValenceElectrons, NumHAcceptors, NumHDonors, NumRotatableBonds, 
+        NumAliphaticCarbocycles, NumAromaticRings, NumAromaticHeterocycles, NumSaturatedRings]
+    train_feat.append(a)
+
+    b = []
+    for name, val in Fragments.__dict__.items():
+        if name[:3] == 'fr_' and callable(val):
+            # print(val(mol))
+            b.append(val(mol))
+    frag.append(b)
 
 train_feat = np.array(train_feat)
+train_frag = np.array(frag)
+print(train_feat.shape)
+print(train_frag.shape)
 vol = np.loadtxt("data/train_set_vdW_volume.txt").reshape(-1, 1)
+print(vol.shape)
 # np.savez_compressed("data/train_set_vdW_volume.npz", volume=vol)
-train_feat = np.concatenate((train_feat, vol), axis=1)
+train_feat = np.concatenate((train_feat, train_frag, vol), axis=1)
 print(train_feat.shape)
 np.savez_compressed("data/train_set_all_descriptors.npz", features=train_feat)
 
 #----------------------------------------------
 
 test_feat = []
+frag = []
 for i in smiles_test_set:
     mol = Chem.MolFromSmiles(i)
     MolWeight = Descriptors.MolWt(mol)
+    HeavyAtomMolWt = Descriptors.HeavyAtomMolWt(mol)
+    MaxAbsPartialCharge = Descriptors.MaxAbsPartialCharge(mol)
+    MinAbsPartialCharge = Descriptors.MinAbsPartialCharge(mol)
+    NumRadicalElectrons = Descriptors.NumRadicalElectrons(mol)
+    NumValenceElectrons = Descriptors.NumValenceElectrons(mol)
     NumHAcceptors = Lipinski.NumHAcceptors(mol)
     NumHDonors = Lipinski.NumHDonors(mol)
     NumRotatableBonds = rdMolDescriptors.CalcNumRotatableBonds(mol)
@@ -74,13 +99,26 @@ for i in smiles_test_set:
     NumAromaticRings = rdMolDescriptors.CalcNumAromaticRings(mol)
     NumAromaticHeterocycles = rdMolDescriptors.CalcNumAromaticHeterocycles(mol)
     NumSaturatedRings = rdMolDescriptors.CalcNumSaturatedRings(mol)
-    test_feat.append([MolWeight, NumHAcceptors, NumHDonors, NumRotatableBonds, 
-                    NumAliphaticCarbocycles, NumAromaticRings, NumAromaticHeterocycles, NumSaturatedRings])
+    a = [MolWeight, HeavyAtomMolWt, MaxAbsPartialCharge, MinAbsPartialCharge, NumRadicalElectrons, 
+        NumValenceElectrons, NumHAcceptors, NumHDonors, NumRotatableBonds, 
+        NumAliphaticCarbocycles, NumAromaticRings, NumAromaticHeterocycles, NumSaturatedRings]
+    test_feat.append(a)
+
+    b = []
+    for name, val in Fragments.__dict__.items():
+        if name[:3] == 'fr_' and callable(val):
+            # print(val(mol))
+            b.append(val(mol))
+    frag.append(b)
 
 test_feat = np.array(test_feat)
+test_frag = np.array(frag)
+print(test_feat.shape)
+print(test_frag.shape)
 vol = np.loadtxt("data/test_set_vdW_volume.txt").reshape(-1, 1)
+print(vol.shape)
 # np.savez_compressed("data/test_set_vdW_volume.npz", volume=vol)
-test_feat = np.concatenate((test_feat, vol), axis=1)
+test_feat = np.concatenate((test_feat, test_frag, vol), axis=1)
 print(test_feat.shape)
 np.savez_compressed("data/test_set_all_descriptors.npz", features=test_feat)
 

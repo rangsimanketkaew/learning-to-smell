@@ -69,8 +69,8 @@ OPTIMIZER = Adam(lr=0.001, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
 # OPTIMIZER = Adamax(lr=0.001, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
 # OPTIMIZER = Adagrad(learning_rate=0.001, initial_accumulator_value=0.1, epsilon=1e-07, name="Adagrad")
 
-LOSS = "binary_crossentropy"
-# LOSS = "categorical_crossentropy"
+# LOSS = "binary_crossentropy"
+LOSS = "categorical_crossentropy"
 # LOSS = "KLDivergence"
 # LOSS = loss.jaccard_loss
 # LOSS = tf.nn.sigmoid_cross_entropy_with_logits
@@ -103,8 +103,12 @@ submission_file_path = "submission.csv"
 
 ## Training data
 train_set_enc = np.load("data/train_set_all_descriptors.npz")["features"]
+train_set_fp = np.load("data/train_set_fingerprint_1024bits_radius2.npz")["morgan"]
+train_set_enc = np.concatenate((train_set_enc, train_set_fp), axis=1)
 ## Test data
 test_set_enc = np.load("data/test_set_all_descriptors.npz")["features"]
+test_set_fp = np.load("data/test_set_fingerprint_1024bits_radius2.npz")["morgan"]
+test_set_enc = np.concatenate((test_set_enc, test_set_fp), axis=1)
 
 ############################################################################
 
@@ -144,6 +148,9 @@ model = Sequential([
     Dense(128, activation=ACT_HIDDEN, kernel_regularizer=KERNEL_REG, bias_regularizer=BIAS_REG, activity_regularizer=ACTI_REG),
     Dropout(DROPOUT),
     BatchNormalization(),
+    Dense(128, activation=ACT_HIDDEN, kernel_regularizer=KERNEL_REG, bias_regularizer=BIAS_REG, activity_regularizer=ACTI_REG),
+    Dropout(DROPOUT),
+    BatchNormalization(), 
     Dense(128, activation=ACT_HIDDEN, kernel_regularizer=KERNEL_REG, bias_regularizer=BIAS_REG, activity_regularizer=ACTI_REG),
     Dense(109, activation=ACT_OUTPUT),
 ])
