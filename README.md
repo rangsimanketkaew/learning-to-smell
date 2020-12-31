@@ -17,7 +17,7 @@ Jaccard (Tanimoto) score
 
 ## My neural network
 
-My neural network is designed with feedforward neural network using Keras/TensorFlow backend. The features (descriptors) that I used to train a model is Morgan fingerprint and structural properties such as functional groups, number of benzene rings, van der Waals volume, etc.
+My neural network is designed with feedforward neural network using Keras/TensorFlow library. The features (descriptors) that I used for training models are the Morgan fingerprint and structural properties of molecule such as functional groups, number of benzene rings, van der Waals volume, etc.
 
 ## Source code structures
 
