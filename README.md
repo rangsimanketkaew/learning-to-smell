@@ -1,10 +1,10 @@
 # Learning to Smell Challenge
 
-This repository is dedicated to [Learning to Smell challenge](https://www.aicrowd.com/challenges/learning-to-smell) organized by AIcrowd. MY best Jaccard score prediction is 0.346 (the 1st round).
+This repository is dedicated to [Learning to Smell challenge](https://www.aicrowd.com/challenges/learning-to-smell) organized by AIcrowd. My best Jaccard score prediction is 0.346 (the 1st round).
 
 ## Challenge
 
-You use machine learning (or any other related methods/techniques) to train the model based on the available dataset (4316 molecules) and predict the smells of a given test set (1079 molecules). There are 109 odors present in the dataset ([data/vocabulary.txt](data/vocabulary.txt)). More details can be found in the website of the challenge.
+You use machine learning (or any other related methods/techniques) to build and train model using the available dataset (4316 molecules) and predict the smells of a given test set (1079 molecules). There are 109 odors present in the dataset ([data/vocabulary.txt](data/vocabulary.txt)). More details can be found on the website of the competition.
 
 #### Dataset
 1. train.csv - (4316 molecules) : This csv file contains the attributes describing the molecules along with their "Sentence"
@@ -38,7 +38,7 @@ In alphabetical order
 - [data](data) - Dataset and files
 - [submission](submission) - Submission files
 
-## How to reproduce my score
+## Steps to reproduce my score
 
 1. Calculate Morgan fingerprints with 8192 bits using RDKit.
 2. Build a model containing 3 hidden layers with 128 neurons each.
