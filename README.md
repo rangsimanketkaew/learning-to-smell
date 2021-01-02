@@ -41,11 +41,11 @@ In alphabetical order
 
 ## Steps to reproduce my score
 
-1. Calculate Morgan fingerprints with 1024 bits using RDKit.
-2. Build a model containing 3 hidden layers and 128 neurons each.
-3. DropOut and batch normalization are also applied.
+1. Download dataset and install necessary libraries.
+2. Calculate Morgan fingerprints (1024 bits) of molecules using RDKit.
+3. Build a model containing 3 hidden layers and 128 neurons each. DropOut and batch normalization are applied.
 4. Compile model with Adam optimizer. Use Categorical entropy as a loss function and accuracy as a metric.
 5. Train model for 300 epochs. Learning rate schedule and early stop techniques are also applied when a metric has stopped improving.
-6. Predict the smells.
-7. Choose the top 15 smell predictions for each sample (molecule) and group by 3.
-8. Submit the prediction results (.csv) and get the score. Example of a submission file is [this file](data/submission/RK_1/submission.csv)
+6. Predict smell.
+7. Choose the top 15 smell predictions for each sample (molecule) and group by 3. [Here is an example of a submission file.](submission/RK_1/submission.csv)
+8. Submit the prediction results (.csv) and get the score.
