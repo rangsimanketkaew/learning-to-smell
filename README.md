@@ -33,7 +33,7 @@ In alphabetical order
 - [predict.py](predict.py) - Prediction
 - [README.md](README.md) - This file
 - [run_24c_1g.sh](run_24c_1g.sh) SLURM input file
-- [train-predict.py](Google Colab file)
+- [train-predict.py](train-predict.py) - Google Colab file
 - [train.py](train.py) - Train model
 - [vdW_volume.py](vdW_volume.py) - Calculate van der Waals volume
 - [data](data) - Dataset and files
