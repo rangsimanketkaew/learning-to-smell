@@ -41,8 +41,8 @@ In alphabetical order
 
 ## Steps to reproduce my score
 
-1. Calculate Morgan fingerprints with 8192 bits using RDKit.
-2. Build a model containing 3 hidden layers with 128 neurons each.
+1. Calculate Morgan fingerprints with 1024 bits using RDKit.
+2. Build a model containing 3 hidden layers and 128 neurons each.
 3. DropOut and batch normalization are also applied.
 4. Compile model with Adam optimizer. Use Categorical entropy as a loss function and accuracy as a metric.
 5. Train model for 300 epochs. Learning rate schedule and early stop techniques are also applied when a metric has stopped improving.
